@@ -1,0 +1,181 @@
+{
+	"source": "bostonscientific",
+	"version" : "5.0",
+	"base_urls": [
+        "https://news.bostonscientific.com/news-releases"
+    ],
+	"listing": {
+		"url_path_matcher": "^(news-releases)$",
+		"xpath": [
+			"//ul[@class='wd_layout-simple wd_item_list']//li//div[@class='wd_title']//a/@href|//li[@class='wd_page_link wd_page_next']//a/@href"
+		]
+	},
+	"info": {
+		"url_path_matcher": "^(?!(^news-releases$))",
+		"xpath": {
+			"title": [
+				"//div[@class='wd_title wd_language_left']/text()",
+				"//meta[@property='og:title']/@content",
+				"//meta[@property='twitter:title']/@content"
+			],
+			"sub_title": [
+				"//div[@class='wd_subtitle wd_language_left']//text()"
+			],
+           	"dt_published": [
+               	"//meta[@property='og:url']/@content",
+            	"//div[@class='wd_body wd_news_body']/p[1]//text()",
+				"//div[@class='wd_body wd_news_body']/text()"
+           	],
+           	"pdf_links": [
+               	"//div[@class='wd_attachment_title']//a/@href"
+           	],
+           	"related_links": [
+               	"//div[@class='wd_body wd_news_body']//p//a/@href[not(contains(., 'pdf') or contains(., 'witter') or contains(., 'acebook') or contains(., 'mailto'))]"
+           	],
+			"images": [
+				{
+					"_anchor": "//div[@class='wd_asset_image']//img",
+					"link": "./@src",
+					"caption": "./@title"
+				}
+			],
+			"videos": [
+				{
+					"_anchor": "//div[@class='wd_videos_asset']//div[@class='wd_icon_overlay']//a",
+					"link": "./@href"
+                		}
+           		 ],
+			"original_source": "//div[@class='wd_body wd_news_body']/p/text()[contains(.,'SOURCE')]",
+			"contact_info": [
+				{
+					"_anchor": "//div[@class='wd_body wd_news_body']/p",
+					"text" : ".//text()[ancestor::p[contains(.,'CONTACT')] or preceding::p[contains(.,'CONTACT')]][not(ancestor::p[sup and i])][not(ancestor::p[contains(., 'SOURCE')])]"
+				}
+			],
+           	"references": [
+               			{
+                   			"_anchor": "//div//div[contains(@id, 'edn')]//p",
+                 		  	"text": ".//text()",
+					 		"link": ".//@href"
+               			},
+				 		{
+							"_anchor": "//div[@class='wd_body wd_news_body']/p[sup and i]",
+							"text": ".//text()",
+							"link": ".//@href"
+				 		},
+				 		{
+							"_anchor": "//div//table[@id='convertedTablef006' or 'convertedTableef36']//tbody//tr//td/p",
+							"text": ".//text()",
+							"link": ".//@href"
+				 		},
+						{
+							"_anchor": "//div[@class='wd_body wd_news_body']/p[br and sup and span]",
+							"text": ".//text()",
+							"link": ".//@href"
+				 		},
+				 		{
+							"_anchor": "//div[@class='wd_body wd_news_body']/p[18]",
+							"text": ".//text()[not(ancestor::p[contains(.,'CONTACT')])]",
+							"link": ".//@href[not(ancestor::p[contains(.,'CONTACT')])]"
+				 		},
+				 		{
+							"_anchor": "//div[@class='wd_body wd_news_body']/p//text()[contains(.,'SOURCE')]/preceding::p[1]",
+							"text": ".//text()",
+							"link": ".//@href"
+						},
+						{
+							"_anchor": "//div[@class='wd_body wd_news_body']//p[contains(.,'Investors')]//following::p",
+							"link": ".//text()[not (ancestor::div[@class='container'])] [not(ancestor::p//text()[contains(.,'SOURCE')])]",
+							"text": ".//@href[not (ancestor::div[@class='container'])] [not(ancestor::p//text()[contains(.,'SOURCE')])]"
+						}
+			],
+			"text": [
+				"//div[@class='wd_body wd_news_body']//p/text()[not(ancestor::p[starts-with(.,'CONTACT')]| ancestor::p//text()[contains(.,'Investor Relations')] | ancestor::p[starts-with(.,'SOURCE')] )]"
+			]
+		}
+	},
+	"etl": {
+		"title": [
+			{
+				"func": "join"
+			},
+			{
+                		"func": "strip"
+            		}
+		],
+       	"related_links": [
+           		 {
+               			 "func": "urljoin"
+           		 },
+			 {
+               			 "func": "remove_dups"
+           		 },
+           		 {
+               			 "func": "ensure_list"
+           		 }
+       	],
+    	"references.*.text, text": [
+           		 {
+               			 "func": "ensure_list"
+           		 }
+       	],
+       	"original_source": [
+           		 {
+               			 "func": "join"
+           		 },
+           		 {   
+               			 "func": "re_sub",
+               			 "kwargs": {
+                   			 "pattern": "\\SOURCE",
+                   			 "repl": ""
+               			 }
+           		 },
+           		 {
+               			 "func": "strip"
+           		 }
+       	],
+       	"dt_published.@0": [
+         		{ 
+               			 "func": "re_findall",
+               			 "kwargs": {
+                   			 "pattern": "\\d{4}-\\d{2}-\\d{2}"
+               			 }
+           		 },
+           		{	
+               			 "func": "join"
+           		 },
+           		 {
+               			 "func": "parse_date"
+           		 }
+       	],
+		"dt_published.@1": [
+                {
+                         "func": "re_findall",
+                         "kwargs": {
+                             "pattern": "[a-z,A-Z]+ \\d+, \\d+"
+                            }
+                },
+                {
+                         "func": "join"
+                },
+                {
+                         "func": "parse_date"
+                }
+        ],
+		"dt_published.@": [
+			{
+					 "func": "re_findall",
+					 "kwargs": {
+						 "pattern": "[a-z,A-Z]+ \\d+, \\d+"
+						}
+			},
+			{
+					 "func": "join"
+			},
+			{
+					 "func": "parse_date"
+			}
+		]
+
+	}
+}	
